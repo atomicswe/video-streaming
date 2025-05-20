@@ -1,8 +1,8 @@
 package com.atomicswe.videostreaming.controllers;
 
 import com.atomicswe.videostreaming.models.Video;
+import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
 import com.atomicswe.videostreaming.repositories.VideoContentStore;
-import com.atomicswe.videostreaming.repositories.VideoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Optional;
 
@@ -18,11 +20,11 @@ import static java.lang.String.format;
 
 @RestController
 public class VideosController {
-    private final VideoRepository videoRepository;
+    private final FileSystemVideoRepository videoRepository;
     private final VideoContentStore videoContentStore;
 
     @Autowired
-    public VideosController(VideoRepository videoRepository, VideoContentStore videoContentStore) {
+    public VideosController(FileSystemVideoRepository videoRepository, VideoContentStore videoContentStore) {
         this.videoRepository = videoRepository;
         this.videoContentStore = videoContentStore;
     }
@@ -32,17 +34,33 @@ public class VideosController {
             @RequestHeader(value = "Range", required = false) String range,
             @PathVariable(value = "file-name") final String fileName) {
 
-        long rangeStart = Long.parseLong(range.replace("bytes=","").split("-")[0]);
-        long rangeEnd = Long.parseLong(range.replace("bytes=","").split("-")[0]);
-
         Optional<Video> video = videoRepository.findByName(fileName);
-        if (video.isEmpty()) {
+        Optional<File> fileOpt = videoRepository.getFileByName(fileName);
+        if (video.isEmpty() || fileOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        File file = fileOpt.get();
 
         long contentLength = video.get().getContentLength();
+        long rangeStart = 0;
+        long rangeEnd = contentLength - 1;
 
-        InputStream inputStream = videoContentStore.getContent(video.get());
+        if (range != null && range.startsWith("bytes=")) {
+            String[] ranges = range.substring(6).split("-");
+            try {
+                rangeStart = Long.parseLong(ranges[0]);
+                if (ranges.length > 1 && !ranges[1].isEmpty()) {
+                    rangeEnd = Long.parseLong(ranges[1]);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        InputStream inputStream;
+        try {
+            inputStream = new FileInputStream(file);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("video/mp4"));
         headers.set("Accept-Ranges", "bytes");
@@ -50,7 +68,6 @@ public class VideosController {
         headers.set("Cache-Control", "no-cache, no-store");
         headers.set("Connection", "keep-alive");
         headers.set("Content-Transfer-Encoding", "binary");
-        headers.set("Content-Length", String.valueOf(rangeEnd - rangeStart));
 
         if (rangeStart == 0) {
             return new ResponseEntity<>(new InputStreamResource(inputStream), headers, HttpStatus.OK);
