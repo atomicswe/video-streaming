@@ -1,6 +1,9 @@
 package com.atomicswe.videostreaming.controllers;
 
+import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.ResourceRegion;
@@ -8,12 +11,14 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/videos")
 public class VideosController {
     private final FileSystemVideoRepository videoRepository;
+    private static final Logger logger = LoggerFactory.getLogger(VideosController.class);
 
     @Autowired
     public VideosController(FileSystemVideoRepository videoRepository) {
@@ -21,36 +26,40 @@ public class VideosController {
     }
 
     //region Video Metadata
-    public record VideoMetadata(String name, long size, long lastModified, String mimeType) {}
-
     @GetMapping(value = "/{file-name}/metadata")
-    public final ResponseEntity<VideoMetadata> getVideoMetadata(
+    public final ResponseEntity<Video> getVideoMetadata(
             @PathVariable(value = "file-name") final String fileName) {
 
-        Optional<File> fileOpt = videoRepository.getFileByName(fileName);
-        if (fileOpt.isEmpty()) {
+        Optional<Video> video = videoRepository.getVideoByName(fileName);
+        if (video.isEmpty()) {
+            logger.error("File not found: {}", fileName);
             return ResponseEntity.notFound().build();
         }
-        File file = fileOpt.get();
-
-        VideoMetadata videoMetadata = new VideoMetadata(
-                file.getName(), file.length(), file.lastModified(), "video/mp4"
-        );
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        return new ResponseEntity<>(videoMetadata, headers, HttpStatus.OK);
+        return new ResponseEntity<>(video.get(), headers, HttpStatus.OK);
     }
     //endregion
 
+    //region Video Streaming
     @GetMapping("/{fileName}")
     public ResponseEntity<ResourceRegion> getVideoByFileName(
             @RequestHeader(value = "Range", required = false) String range,
             @PathVariable("fileName") String fileName) {
 
+        // validate file name to prevent directory traversal attacks
+        if (!fileName.matches("[a-zA-Z0-9._-]+")) {
+            logger.error("Received request with invalid file name: {}", fileName);
+            return ResponseEntity.badRequest().build();
+        }
+
+        logger.info("Processing request for file: {}, Range: {}", fileName, range != null ? range : "none");
+
         Optional<File> fileOpt = videoRepository.getFileByName(fileName);
         if (fileOpt.isEmpty()) {
+            logger.error("File not found: {}", fileName);
             return ResponseEntity.notFound().build();
         }
 
@@ -59,6 +68,7 @@ public class VideosController {
         long contentLength = file.length();
 
         if (range == null || !range.startsWith("bytes=")) {
+            logger.info("No range specified, returning full video.");
             ResourceRegion fullRegion = new ResourceRegion(videoResource, 0, contentLength);
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("video/mp4"))
@@ -87,6 +97,7 @@ public class VideosController {
             }
 
             if (rangeStart < 0 || rangeStart >= contentLength) {
+                logger.error("Invalid range start: {} for file: {}", rangeStart, fileName);
                 return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
                         .header(HttpHeaders.CONTENT_RANGE, "bytes */" + contentLength)
                         .build();
@@ -95,20 +106,23 @@ public class VideosController {
             rangeEnd = Math.min(rangeEnd, contentLength - 1);
 
             if (rangeStart > rangeEnd) {
+                logger.error("Invalid range: {}-{} for file: {}", rangeStart, rangeEnd, fileName);
                 return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
                         .header(HttpHeaders.CONTENT_RANGE, "bytes */" + contentLength)
                         .build();
             }
 
         } catch (NumberFormatException e) {
+            logger.error("Invalid range format: {} for file: {}", range, fileName);
             return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
                     .header(HttpHeaders.CONTENT_RANGE, "bytes */" + contentLength)
                     .build();
         }
 
         long rangeLength = rangeEnd - rangeStart + 1;
-
         ResourceRegion region = new ResourceRegion(videoResource, rangeStart, rangeLength);
+
+        logger.info("Returning range: {}-{} of {}", rangeStart, rangeEnd, fileName);
 
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .contentType(MediaType.parseMediaType("video/mp4"))
@@ -116,4 +130,12 @@ public class VideosController {
                 .contentLength(rangeLength)
                 .body(region);
     }
+    //endregion
+
+    //region Video List
+    @GetMapping
+    public ResponseEntity<List<Video>> getAllVideos() {
+        return ResponseEntity.ok(videoRepository.findAll());
+    }
+    //endregion
 }

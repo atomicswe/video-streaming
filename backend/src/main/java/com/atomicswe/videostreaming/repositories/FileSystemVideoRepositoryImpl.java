@@ -34,7 +34,7 @@ public class FileSystemVideoRepositoryImpl implements FileSystemVideoRepository 
     }
 
     @Override
-    public Optional<Video> findByName(String name) {
+    public Optional<Video> getVideoByName(String name) {
         File file = new File(videoStoragePath, name);
         if (file.exists() && file.isFile()) {
             return Optional.of(fileToVideo(file));

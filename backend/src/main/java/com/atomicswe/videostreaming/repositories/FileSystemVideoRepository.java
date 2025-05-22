@@ -7,6 +7,6 @@ import java.io.File;
 
 public interface FileSystemVideoRepository {
     List<Video> findAll();
-    Optional<Video> findByName(String name);
+    Optional<Video> getVideoByName(String name);
     Optional<File> getFileByName(String name);
 }
