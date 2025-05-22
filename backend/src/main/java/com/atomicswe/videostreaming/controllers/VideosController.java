@@ -2,7 +2,6 @@ package com.atomicswe.videostreaming.controllers;
 
 import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
-import com.atomicswe.videostreaming.repositories.VideoContentStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -21,12 +20,10 @@ import static java.lang.String.format;
 @RestController
 public class VideosController {
     private final FileSystemVideoRepository videoRepository;
-    private final VideoContentStore videoContentStore;
 
     @Autowired
-    public VideosController(FileSystemVideoRepository videoRepository, VideoContentStore videoContentStore) {
+    public VideosController(FileSystemVideoRepository videoRepository) {
         this.videoRepository = videoRepository;
-        this.videoContentStore = videoContentStore;
     }
 
     @GetMapping(value = "/videos/{file-name}")
