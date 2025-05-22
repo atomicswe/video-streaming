@@ -2,6 +2,7 @@ package com.atomicswe.videostreaming.controllers;
 
 import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +46,7 @@ public class VideosController {
 
     //region Video Streaming
     @GetMapping("/{fileName}")
-    public ResponseEntity<ResourceRegion> getVideoByFileName(
+    public ResponseEntity<ResourceRegion> streamVideo(
             @RequestHeader(value = "Range", required = false) String range,
             @PathVariable("fileName") String fileName) {
 
@@ -133,9 +134,39 @@ public class VideosController {
     //endregion
 
     //region Video List
-    @GetMapping
-    public ResponseEntity<List<Video>> getAllVideos() {
-        return ResponseEntity.ok(videoRepository.findAll());
+    @Getter
+    public static class GetAllVideosRequest {
+        private Integer page;
+        private Integer pageSize;
+    }
+
+    @PostMapping
+    public ResponseEntity<List<Video>> getAllVideos(
+            @RequestBody(required = false) GetAllVideosRequest request
+    ) {
+        Integer page = request != null ? request.getPage() : null;
+        Integer pageSize = request != null ? request.getPageSize() : null;
+
+        logger.info("Processing request for videos list, page: {}, pageSize: {}",
+                page != null ? page : 0,
+                pageSize != null ? pageSize : 0);
+
+        if (page != null && pageSize == null) {
+            logger.error("Page size is required when page is specified.");
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        List<Video> videos = videoRepository.findAll();
+        if (page != null) {
+            int lastIndex = page * pageSize + pageSize;
+            if (page < 0 || lastIndex >= videos.size()) {
+                logger.error("Invalid page number: {} for total videos: {}", page, videos.size());
+                return ResponseEntity.badRequest().body(null);
+            }
+            videos = videos.subList(page, lastIndex);
+        }
+
+        return ResponseEntity.ok(videos);
     }
     //endregion
 }
