@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="https://github.com/atomicswe">
+
+    <title>video-streaming</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body>
+    <div class="w-full h-50px text-center text-2xl font-bold py-4 bg-gray-200 border-b border-gray-300">
+        video-streaming
+    </div>
+    <div>
+        <div class="flex flex-col items-center m-4">
+            <video id="video" 
+                   controls 
+                   width="75%" 
+                   preload="metadata">
+                <source src="http://localhost:1221/videos/highway_cars.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="w-3/4 mt-2">
+                <h2 id="videoName" class="text-xl font-semibold text-gray-800"></h2>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>
