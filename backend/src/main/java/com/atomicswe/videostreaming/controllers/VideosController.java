@@ -1,6 +1,5 @@
 package com.atomicswe.videostreaming.controllers;
 
-import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -31,14 +30,13 @@ public class VideosController {
             @RequestHeader(value = "Range", required = false) String range,
             @PathVariable(value = "file-name") final String fileName) {
 
-        Optional<Video> video = videoRepository.findByName(fileName);
         Optional<File> fileOpt = videoRepository.getFileByName(fileName);
-        if (video.isEmpty() || fileOpt.isEmpty()) {
+        if (fileOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         File file = fileOpt.get();
 
-        long contentLength = video.get().getContentLength();
+        long contentLength = file.length();
         long rangeStart = 0;
         long rangeEnd = contentLength - 1;
 

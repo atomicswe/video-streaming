@@ -76,11 +76,6 @@
 
         <!--Spring content-->
         <dependency>
-            <groupId>com.github.paulcwarren</groupId>
-            <artifactId>spring-content-fs-boot-starter</artifactId>
-            <version>3.0.17</version>
-        </dependency>
-        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>

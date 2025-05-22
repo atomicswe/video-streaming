@@ -7,8 +7,6 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.content.commons.annotations.ContentId;
-import org.springframework.content.commons.annotations.ContentLength;
 
 import java.util.Date;
 
@@ -24,7 +22,6 @@ public class Video {
     private Date created = new Date();
     private String summary;
 
-    @ContentId private String contentId;
-    @ContentLength private long contentLength;
+    private long contentLength;
     private String contentMimeType = "video/mp4";
 }

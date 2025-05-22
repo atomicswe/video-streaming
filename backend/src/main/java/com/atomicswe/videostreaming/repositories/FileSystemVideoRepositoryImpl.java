@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public class FileSystemVideoRepositoryImpl implements FileSystemVideoRepository {
@@ -21,7 +18,13 @@ public class FileSystemVideoRepositoryImpl implements FileSystemVideoRepository 
         List<Video> videos = new ArrayList<>();
         File dir = new File(videoStoragePath);
         if (dir.exists() && dir.isDirectory()) {
-            for (File file : dir.listFiles()) {
+            File[] files = dir.listFiles();
+
+            if (files == null) {
+                return Collections.emptyList();
+            }
+
+            for (File file : files) {
                 if (file.isFile() && file.getName().endsWith(".mp4")) {
                     videos.add(fileToVideo(file));
                 }
@@ -53,7 +56,7 @@ public class FileSystemVideoRepositoryImpl implements FileSystemVideoRepository 
         video.setContentLength(file.length());
         video.setCreated(new Date(file.lastModified()));
         video.setContentMimeType("video/mp4");
-        // You can set more fields as needed
+
         return video;
     }
 }
