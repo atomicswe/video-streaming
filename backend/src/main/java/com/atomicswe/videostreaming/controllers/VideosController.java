@@ -2,28 +2,38 @@ package com.atomicswe.videostreaming.controllers;
 
 import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
+import com.atomicswe.videostreaming.services.VideoProcessingService;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/videos")
 public class VideosController {
     private final FileSystemVideoRepository videoRepository;
+    private final VideoProcessingService videoProcessingService;
+    private final Map<String, CompletableFuture<String>> processingJobs = new ConcurrentHashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(VideosController.class);
 
     @Autowired
-    public VideosController(FileSystemVideoRepository videoRepository) {
+    public VideosController(FileSystemVideoRepository videoRepository,
+                            VideoProcessingService videoProcessingService) {
         this.videoRepository = videoRepository;
+        this.videoProcessingService = videoProcessingService;
     }
 
     //region Video Metadata
@@ -158,8 +168,9 @@ public class VideosController {
 
         List<Video> videos = videoRepository.findAll();
         if (page != null) {
-            int lastIndex = page * pageSize + pageSize;
-            if (page < 0 || lastIndex >= videos.size()) {
+            int firstIndex = page * pageSize;
+            int lastIndex = Math.min(videos.size(), page * pageSize + pageSize);
+            if (page < 0 || firstIndex >= videos.size()) {
                 logger.error("Invalid page number: {} for total videos: {}", page, videos.size());
                 return ResponseEntity.badRequest().body(null);
             }
@@ -167,6 +178,83 @@ public class VideosController {
         }
 
         return ResponseEntity.ok(videos);
+    }
+    //endregion
+
+    //region Video Upload
+    @PostMapping("/upload")
+    public ResponseEntity<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) throws IOException {
+        logger.info("Processing file: {}", file.getOriginalFilename());
+
+        String tmpFilename = "temp_" + UUID.randomUUID() + ".mp4";
+        File tmpFile = videoRepository.saveUploadedFile(file, tmpFilename);
+
+        String fileName = file.getOriginalFilename();
+        String finalFilename = UUID.randomUUID().toString().replace("-", "") +
+                "-" +
+                (fileName != null ? fileName.replace( ".mp4", "") : "") +
+                ".mp4";
+
+        CompletableFuture<String> future = videoProcessingService
+                .processVideoAsync(tmpFile.toPath(), finalFilename);
+
+        future.whenComplete((_, _) -> {
+            logger.info("Finished processing: {}", finalFilename);
+            boolean deleted = videoRepository.deleteFile(tmpFilename);
+            logger.info("Deleted video? {}", deleted);
+        });
+
+        String jobId = UUID.randomUUID().toString();
+        processingJobs.put(jobId, future);
+        logger.info("Processing job: {}", jobId);
+
+        return ResponseEntity.accepted()
+                .body(Map.of(
+                        "jobId", jobId,
+                        "status", "processing",
+                        "message", "Video upload started"
+                ));
+    }
+
+    @GetMapping("/upload/status/{jobId}")
+    public ResponseEntity<Map<String, Object>> checkStatus(@PathVariable String jobId) {
+        logger.info("Getting info for job: {}", jobId);
+        CompletableFuture<String> future = processingJobs.get(jobId);
+
+        if (future == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (future.isDone()) {
+            try {
+                String filename = future.get();
+                return ResponseEntity.ok(Map.of(
+                        "jobId", jobId,
+                        "status", "completed",
+                        "filename", filename,
+                        "url", "/videos/" + filename
+                ));
+            } catch (Exception e) {
+                return ResponseEntity.ok(Map.of(
+                        "jobId", jobId,
+                        "status", "failed",
+                        "error", e.getMessage()
+                ));
+            }
+        } else {
+            return ResponseEntity.ok(Map.of(
+                    "jobId", jobId,
+                    "status", "processing"
+            ));
+        }
+    }
+
+    @Scheduled(fixedDelay = 3600000) // Every hour
+    public void cleanupOldJobs() {
+        logger.info("Cleaning up completed jobs");
+        processingJobs.entrySet().removeIf(entry ->
+                entry.getValue().isDone()
+        );
     }
     //endregion
 }
