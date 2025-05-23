@@ -7,7 +7,6 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.*;
@@ -255,6 +254,20 @@ public class VideosController {
         processingJobs.entrySet().removeIf(entry ->
                 entry.getValue().isDone()
         );
+    }
+    //endregion
+
+    //region Video Deletion
+    @DeleteMapping("/{fileName}")
+    public ResponseEntity<Void> deleteVideo(@PathVariable("fileName") String fileName) {
+        logger.info("Deleting video: {}", fileName);
+        boolean deleted = videoRepository.deleteFile(fileName);
+
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
     //endregion
 }
