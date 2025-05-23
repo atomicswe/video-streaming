@@ -10,21 +10,58 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body>
-    <div class="w-full h-50px text-center text-2xl font-bold py-4 bg-gray-200 border-b border-gray-300">
-        video-streaming
-    </div>
-    <div>
-        <div class="flex flex-col items-center m-4">
-            <video id="video" 
-                   controls 
-                   width="75%" 
-                   preload="metadata">
-                <source src="http://localhost:1221/videos/highway_cars.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <div class="w-3/4 mt-2">
-                <h2 id="videoName" class="text-xl font-semibold text-gray-800"></h2>
+    <nav
+        class="flex justify-center gap-4 w-full h-50px text-center text-2xl font-bold py-4 bg-gray-200 border-b border-gray-300">
+        <a href="index.html" class="text-gray-600 hover:text-gray-700 transition-colors">video-streaming</a>
+        <a href="html/upload.html" class="text-blue-500 hover:text-blue-600 transition-colors">upload</a>
+    </nav>
+    <div class="flex h-[calc(100vh-50px)]">
+        <!-- Video List Sidebar -->
+        <div id="videoList" class="w-80 bg-gray-100 border-r border-gray-300 overflow-y-auto transition-all duration-300">
+            <div class="p-4">
+                <div class="flex items-center mb-4">
+                    <button id="toggleList" class="p-2 hover:bg-gray-200 rounded cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h2 class="text-xl font-semibold">Videos</h2>
+                </div>
+                <div id="videoListContent" class="space-y-2">
+                    <!-- Video list items will be inserted here -->
+                </div>
+                <div id="pagination" class="mt-4 flex justify-between items-center">
+                    <button id="prevPage" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">Previous</button>
+                    <span id="pageInfo" class="text-sm text-gray-600">Page 1</span>
+                    <button id="nextPage" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">Next</button>
+                </div>
             </div>
+        </div>
+        <!-- Show button to open sidebar when collapsed -->
+        <button id="openListBtn" class="hidden cursor-pointer fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-gray-200 border border-gray-300 rounded-r px-2 py-3 shadow hover:bg-gray-300 transition-all" style="outline: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+        <!-- Video Player Section -->
+        <div id="videoPlayer" class="flex-1 p-4 hidden">
+            <div class="flex flex-col items-center justify-center">
+                <video id="video" 
+                       controls 
+                       width="100%" 
+                       preload="metadata"
+                       class="max-w-[1600px]">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="w-full max-w-[1600px] mt-2">
+                    <h2 id="videoName" class="text-xl font-semibold text-gray-800 text-left"></h2>
+                    <p id="videoDate" class="text-sm text-gray-600 text-left"></p>
+                </div>
+            </div>
+        </div>
+        <!-- Instruction message when no video is selected -->
+        <div id="selectPrompt" class="flex-1 flex items-center justify-center">
+            <span class="text-lg text-gray-500">Select a video from the list to start watching.</span>
         </div>
     </div>
     <script src="js/main.js"></script>
