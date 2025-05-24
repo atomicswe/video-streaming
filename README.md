@@ -19,9 +19,9 @@ Key features include:
 ### Prerequisites
 
 - Java 21 or later
-- Python 3.x
-- Maven
-- Make (for using the provided Makefile)
+- Python 3.13
+- Maven (included via Maven wrapper)
+- Make (for using the provided Makefiles)
 
 ### Running the Application
 
@@ -50,6 +50,24 @@ make backend
 The services will be available at:
 - Frontend: http://localhost:80
 - Backend: http://localhost:1221
+
+### Available Make Commands
+
+#### Root Directory
+- `make all` - Start both frontend and backend services
+- `make frontend` - Start only the frontend service
+- `make backend` - Start only the backend service
+
+#### Backend Directory
+- `make build` - Build the backend project
+- `make run` - Run the backend application
+- `make clean` - Clean the backend project
+- `make build-and-run` - Build and run the backend application
+- `make help` - Show available backend commands
+
+#### Frontend Directory
+- `make run` - Run the frontend service
+- `make help` - Show available frontend commands
 
 ### API Endpoints
 
@@ -87,11 +105,3 @@ git push origin feature/your-feature-name
 - Follow the existing code style and structure
 - Write meaningful commit messages
 - Update documentation as needed
-
-### Building from Source
-
-To build the backend:
-```bash
-cd backend
-./mvnw clean install
-```
