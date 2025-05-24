@@ -3,7 +3,6 @@ package com.atomicswe.videostreaming.controllers;
 import com.atomicswe.videostreaming.models.Video;
 import com.atomicswe.videostreaming.repositories.FileSystemVideoRepository;
 import com.atomicswe.videostreaming.services.VideoProcessingService;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,10 +142,17 @@ public class VideosController {
     //endregion
 
     //region Video List
-    @Getter
     public static class GetAllVideosRequest {
         private Integer page;
         private Integer pageSize;
+
+        public Integer getPage() {
+            return page;
+        }
+
+        public Integer getPageSize() {
+            return pageSize;
+        }
     }
 
     @PostMapping
