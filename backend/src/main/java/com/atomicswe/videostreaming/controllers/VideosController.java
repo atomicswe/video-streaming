@@ -156,7 +156,7 @@ public class VideosController {
     }
 
     @PostMapping
-    public ResponseEntity<List<Video>> getAllVideos(
+    public ResponseEntity<Map<String, Object>> getAllVideos(
             @RequestBody(required = false) GetAllVideosRequest request
     ) {
         Integer page = request != null ? request.getPage() : null;
@@ -174,20 +174,38 @@ public class VideosController {
         List<Video> videos = videoRepository.findAll();
         if (videos.isEmpty()) {
             logger.info("No videos found.");
-            return ResponseEntity.ok(Collections.emptyList());
+            if (page != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("videos", Collections.emptyList());
+                response.put("currentPage", 0);
+                response.put("totalPages", 0);
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.ok(Map.of("videos", Collections.emptyList()));
+            }
         }
 
         if (page != null) {
+            int totalVideos = videos.size();
+            int totalPages = (int) Math.ceil((double) totalVideos / pageSize) - 1;
             int firstIndex = page * pageSize;
-            int lastIndex = Math.min(videos.size(), page * pageSize + pageSize);
-            if (page < 0 || firstIndex >= videos.size()) {
-                logger.error("Invalid page number: {} for total videos: {}", page, videos.size());
+            int lastIndex = Math.min(totalVideos, firstIndex + pageSize);
+
+            if (page < 0 || firstIndex >= totalVideos) {
+                logger.error("Invalid page number: {} for total videos: {}", page, totalVideos);
                 return ResponseEntity.badRequest().body(null);
             }
-            videos = videos.subList(page, lastIndex);
-        }
 
-        return ResponseEntity.ok(videos);
+            List<Video> pagedVideos = videos.subList(firstIndex, lastIndex);
+            Map<String, Object> response = new HashMap<>();
+            response.put("videos", pagedVideos);
+            response.put("currentPage", page);
+            response.put("totalPages", totalPages);
+
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.ok(Map.of("videos", videos));
+        }
     }
     //endregion
 

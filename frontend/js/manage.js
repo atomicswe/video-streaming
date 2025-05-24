@@ -33,7 +33,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({ page, pageSize })
             });
             const data = await response.json();
-            return data;
+            totalVideos = data.totalPages * pageSize;
+            currentPage = data.currentPage;
+            return data.videos;
         } catch (error) {
             console.error('Error fetching videos:', error);
             showFeedback('Error loading videos', true);
@@ -114,15 +116,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updatePagination(total) {
         const totalPages = Math.ceil(total / pageSize);
-        pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+        pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages + 1}`;
         prevPage.disabled = currentPage === 0;
-        nextPage.disabled = currentPage === totalPages - 1;
+        nextPage.disabled = currentPage === totalPages;
     }
 
     prevPage.addEventListener('click', async () => {
         if (currentPage > 0) {
-            currentPage--;
-            const videos = await fetchVideos(currentPage);
+            const videos = await fetchVideos(currentPage - 1);
             updateVideoList(videos);
             updatePagination(totalVideos);
         }
@@ -130,9 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     nextPage.addEventListener('click', async () => {
         const totalPages = Math.ceil(totalVideos / pageSize);
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            const videos = await fetchVideos(currentPage);
+        if (currentPage <= totalPages) {
+            const videos = await fetchVideos(currentPage + 1);
             updateVideoList(videos);
             updatePagination(totalVideos);
         }
@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function initialize() {
         const videos = await fetchVideos();
-        totalVideos = videos.length;
         updateVideoList(videos);
         updatePagination(totalVideos);
     }
