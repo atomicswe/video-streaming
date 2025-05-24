@@ -166,6 +166,11 @@ public class VideosController {
         }
 
         List<Video> videos = videoRepository.findAll();
+        if (videos.isEmpty()) {
+            logger.info("No videos found.");
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
         if (page != null) {
             int firstIndex = page * pageSize;
             int lastIndex = Math.min(videos.size(), page * pageSize + pageSize);

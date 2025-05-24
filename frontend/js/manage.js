@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const pageInfo = document.getElementById('pageInfo');
     const feedbackMessage = document.getElementById('feedbackMessage');
     const feedbackText = document.getElementById('feedbackText');
+    const noVideosMessage = document.getElementById('noVideosMessage');
+    const pagination = document.getElementById('pagination');
 
     let currentPage = 0;
     const pageSize = 10;
@@ -74,6 +76,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateVideoList(videos) {
         videoList.innerHTML = '';
+        
+        if (videos.length === 0) {
+            videoList.classList.add('hidden');
+            noVideosMessage.classList.remove('hidden');
+            pagination.classList.add('hidden');
+            return;
+        }
+
+        videoList.classList.remove('hidden');
+        noVideosMessage.classList.add('hidden');
+        pagination.classList.remove('hidden');
+
         videos.forEach(video => {
             const videoItem = document.createElement('div');
             videoItem.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg';

@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const openListBtn = document.getElementById('openListBtn');
     const videoPlayer = document.getElementById('videoPlayer');
     const selectPrompt = document.getElementById('selectPrompt');
+    const noVideosMessage = document.getElementById('noVideosMessage');
+    const pagination = document.getElementById('pagination');
 
     let currentPage = 0;
     const pageSize = 10;
@@ -66,6 +68,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateVideoList(videos) {
         videoListContent.innerHTML = '';
+        
+        if (videos.length === 0) {
+            videoListContent.classList.add('hidden');
+            noVideosMessage.classList.remove('hidden');
+            pagination.classList.add('hidden');
+            return;
+        }
+
+        videoListContent.classList.remove('hidden');
+        noVideosMessage.classList.add('hidden');
+        pagination.classList.remove('hidden');
+
         videos.forEach(video => {
             const videoItem = document.createElement('div');
             videoItem.className = 'p-3 bg-white rounded shadow-sm hover:bg-gray-50 cursor-pointer';

@@ -1,7 +1,14 @@
 const form = document.getElementById('uploadForm');
 const loadingIndicator = document.getElementById('loadingIndicator');
 const result = document.getElementById('result');
-const videoLink = document.getElementById('videoLink');
+
+const fileInput = document.getElementById('videoFile');
+const fileName = document.getElementById('fileName');
+if (fileInput && fileName) {
+    fileInput.addEventListener('change', function () {
+        fileName.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : 'No file selected.';
+    });
+}
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -46,7 +53,6 @@ form.addEventListener('submit', async (e) => {
                 if (statusData.status === 'completed') {
                     loadingIndicator.classList.add('hidden');
                     result.classList.remove('hidden');
-                    videoLink.href = statusData.url;
                     return;
                 }
 
