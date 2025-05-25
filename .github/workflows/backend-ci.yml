@@ -2,9 +2,9 @@ name: Backend CI - Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ magic ]
   pull_request:
-    branches: [ main ]
+    branches: [ magic ]
   workflow_dispatch:
 
 jobs:
