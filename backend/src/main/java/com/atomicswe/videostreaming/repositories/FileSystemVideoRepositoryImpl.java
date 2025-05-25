@@ -22,6 +22,12 @@ public class FileSystemVideoRepositoryImpl implements FileSystemVideoRepository 
 
     private final Logger logger = LoggerFactory.getLogger(FileSystemVideoRepositoryImpl.class);
 
+    public FileSystemVideoRepositoryImpl() {}
+
+    public FileSystemVideoRepositoryImpl(String videoStoragePath) {
+        this.videoStoragePath = videoStoragePath;
+    }
+
     @PostConstruct
     public void init() {
         File directory = new File(videoStoragePath);

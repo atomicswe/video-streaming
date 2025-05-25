@@ -8,12 +8,22 @@ build:
 run:
 	./mvnw spring-boot:run
 
+# Run the tests
+test:
+	./mvnw test
+
 # Clean the project
 clean:
 	./mvnw clean
 
 # Build and run the application
 build-and-run: build run
+
+# Build and test the project
+build-and-test: build test
+
+# Build, run the tests and run the application
+build-and-test-and-run: build test run
 
 # Show help
 help:

@@ -6,7 +6,7 @@ frontend:
 
 # Run the backend using Maven
 backend:
-	cd backend && make run
+	cd backend && make build-and-test-and-run
 
 # Run both services (frontend in background)
 all:
